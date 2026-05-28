@@ -200,13 +200,13 @@ if all(col in df.columns for col in columnas_requeridas):
             with st.chat_message("user"):
                 st.write(mensaje_usuario)
                 
-            with st.chat_message("assistant"):
+           with st.chat_message("assistant"):
                 if not api_key:
                     st.error("⚠️ No se detectó la llave API. Revisa los Secrets en la nube.")
                 else:
-                    try:  # <-- Aquí abrimos el try
+                    try:
                         genai.configure(api_key=api_key)
-                       modelo = genai.GenerativeModel('gemini-pro')
+                        modelo = genai.GenerativeModel('gemini-pro')
                         
                         contexto_tabla = df_final.head(50).to_string(index=False)
                         prompt_sistema = f"""
@@ -225,7 +225,7 @@ if all(col in df.columns for col in columnas_requeridas):
                         st.write(texto_ia)
                         st.session_state.mensajes.append({"role": "assistant", "content": texto_ia})
                         
-                    except Exception as e:  # <-- Aquí cerramos el try (esto es lo que faltaba o se movió)
+                    except Exception as e:
                         st.error(f"Error de conexión: Verifica tu API Key o conexión a internet. Detalles: {e}")
 
 else:
