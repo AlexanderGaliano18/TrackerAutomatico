@@ -204,10 +204,9 @@ if all(col in df.columns for col in columnas_requeridas):
                 if not api_key:
                     st.error("⚠️ No se detectó la llave API. Revisa los Secrets en la nube.")
                 else:
-                    try:
+                    try:  # <-- Aquí abrimos el try
                         genai.configure(api_key=api_key)
-                      # PON ESTA LÍNEA EN SU LUGAR:
-modelo = genai.GenerativeModel('gemini-pro')
+                        modelo = genai.GenerativeModel('gemini-1.5-flash-latest')
                         
                         contexto_tabla = df_final.head(50).to_string(index=False)
                         prompt_sistema = f"""
@@ -226,7 +225,7 @@ modelo = genai.GenerativeModel('gemini-pro')
                         st.write(texto_ia)
                         st.session_state.mensajes.append({"role": "assistant", "content": texto_ia})
                         
-                    except Exception as e:
+                    except Exception as e:  # <-- Aquí cerramos el try (esto es lo que faltaba o se movió)
                         st.error(f"Error de conexión: Verifica tu API Key o conexión a internet. Detalles: {e}")
 
 else:
