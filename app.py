@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import google.generativeai as genai  # <-- Librería de IA
+import google.generativeai as genai
 
 # 1. Configuración de la página
 st.set_page_config(
@@ -178,7 +178,7 @@ if all(col in df.columns for col in columnas_requeridas):
         st.subheader("💬 Asistente Automotriz AI")
         st.markdown("Pregúntame sobre aciertos, desaciertos o comparativas.")
         
-        # --- LECTURA SEGURA DE LA API KEY DESDE LA BÓVEDA ---
+        # --- LECTURA SEGURA DE LA API KEY ---
         try:
             api_key = st.secrets["GEMINI_API_KEY"]
         except KeyError:
@@ -206,27 +206,45 @@ if all(col in df.columns for col in columnas_requeridas):
                 else:
                     try:
                         genai.configure(api_key=api_key)
-                        modelo = genai.GenerativeModel('gemini-pro')
                         
-                        contexto_tabla = df_final.head(50).to_string(index=False)
-                        prompt_sistema = f"""
-                        Eres un experto asesor automotriz de segunda mano.
-                        Responde a la pregunta del usuario basándote ESTRICTAMENTE en esta base de datos de mercado:
+                        # --- EL FIX DEFINITIVO: AUTO-DETECCIÓN DE MODELOS ---
+                        # Preguntamos qué modelos están activos y soportan generación de texto
+                        modelos_permitidos = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                         
-                        {contexto_tabla}
-                        
-                        Pregunta del usuario: {mensaje_usuario}
-                        Responde de forma concisa, analítica y amigable.
-                        """
-                        
-                        respuesta = modelo.generate_content(prompt_sistema)
-                        texto_ia = respuesta.text
-                        
-                        st.write(texto_ia)
-                        st.session_state.mensajes.append({"role": "assistant", "content": texto_ia})
-                        
+                        if not modelos_permitidos:
+                            st.error("Tu API Key no tiene permisos para generar texto.")
+                        else:
+                            # Priorizamos el modelo flash o pro si existen, si no, agarra el primero de la lista que funcione
+                            modelo_elegido = modelos_permitidos[0]
+                            for m in modelos_permitidos:
+                                if '1.5-flash' in m:
+                                    modelo_elegido = m
+                                    break
+                                elif '1.0-pro' in m:
+                                    modelo_elegido = m
+                                    
+                            nombre_limpio = modelo_elegido.replace('models/', '')
+                            modelo = genai.GenerativeModel(nombre_limpio)
+                            
+                            contexto_tabla = df_final.head(50).to_string(index=False)
+                            prompt_sistema = f"""
+                            Eres un experto asesor automotriz de segunda mano.
+                            Responde a la pregunta del usuario basándote ESTRICTAMENTE en esta base de datos de mercado:
+                            
+                            {contexto_tabla}
+                            
+                            Pregunta del usuario: {mensaje_usuario}
+                            Responde de forma concisa, analítica y amigable.
+                            """
+                            
+                            respuesta = modelo.generate_content(prompt_sistema)
+                            texto_ia = respuesta.text
+                            
+                            st.write(texto_ia)
+                            st.session_state.mensajes.append({"role": "assistant", "content": texto_ia})
+                            
                     except Exception as e:
-                        st.error(f"Error de conexión: Verifica tu API Key o conexión a internet. Detalles: {e}")
+                        st.error(f"Error procesando la IA: {e}")
 
 else:
     st.error(f"El dataset no tiene las columnas requeridas: {', '.join(columnas_requeridas)}")
