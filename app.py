@@ -133,3 +133,50 @@ if all(col in df.columns for col in columnas_requeridas):
             
 else:
     st.error(f"El dataset no tiene las columnas requeridas: {', '.join(columnas_requeridas)}")
+    import streamlit.components.v1 as components
+
+# ... (Todo tu código anterior de filtros y gráficos) ...
+
+st.divider()
+st.markdown('<div class="main-title">🚘 Zona de Exploración y Asesoría</div>', unsafe_allow_html=True)
+
+# Creamos dos columnas: una para el 3D y otra para el chat
+col_3d, col_chat = st.columns([1.2, 1])
+
+with col_3d:
+    st.subheader("Visor 3D del Vehículo")
+    st.markdown("Explora el diseño exterior e interior del modelo seleccionado.")
+    
+    # Usamos un iframe de Sketchfab (Este es un modelo de prueba gratuito)
+    # Más adelante podemos hacer que este link cambie según el carro que selecciones en el filtro.
+    st.components.v1.html(
+        '''
+        <div class="sketchfab-embed-wrapper">
+            <iframe title="Car Model" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share src="https://sketchfab.com/models/302a22f3e8f8444a8677cde6cda1ebbd/embed?autostart=1&ui_theme=dark" height="450" width="100%"> </iframe>
+        </div>
+        ''',
+        height=470,
+    )
+
+with col_chat:
+    st.subheader("💬 Asistente Automotriz AI")
+    st.markdown("Pregúntame sobre aciertos, desaciertos o comparativas.")
+    
+    # Interfaz nativa de chat de Streamlit
+    mensaje_usuario = st.chat_input("Ej: ¿Por qué elegir un Swift sobre un Accent?")
+    
+    # Contenedor para mostrar el historial del chat
+    with st.container(height=350):
+        # Mensaje de bienvenida por defecto
+        with st.chat_message("assistant"):
+            st.write("¡Hola! Soy tu asistente de datos. Pronto estaré conectado a tu base de datos para darte recomendaciones exactas. 🛠️")
+            
+        if mensaje_usuario:
+            # Mostrar la pregunta del usuario
+            with st.chat_message("user"):
+                st.write(mensaje_usuario)
+            
+            # Mostrar la respuesta (por ahora de prueba) del bot
+            with st.chat_message("assistant"):
+                st.write(f"Has preguntado: '{mensaje_usuario}'.")
+                st.info("💡 Modo demostración: Necesitamos conectar una API para que empiece a analizar y responder con datos reales.")
