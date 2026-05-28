@@ -180,19 +180,57 @@ if all(col in df.columns for col in columnas_requeridas):
         st.subheader("💬 Asistente Automotriz AI")
         st.markdown("Pregúntame sobre aciertos, desaciertos o comparativas.")
         
-        mensaje_usuario = st.chat_input("Ej: ¿Por qué elegir un Swift sobre un Accent?")
+        # Campo para ingresar la API Key de forma segura
+        api_key = st.text_input("🔑 Ingresa tu API Key de Gemini:", type="password")
         
-        with st.container(height=350):
+        # Memoria del chat: Inicializamos el historial en session_state
+        if "mensajes" not in st.session_state:
+            st.session_state.mensajes = [{"role": "assistant", "content": "¡Hola! Ingresa tu API Key arriba y pregúntame qué auto te conviene más. 🛠️"}]
+            
+        # Contenedor para mostrar los mensajes anteriores
+        with st.container(height=300):
+            for msg in st.session_state.mensajes:
+                with st.chat_message(msg["role"]):
+                    st.write(msg["content"])
+                    
+        # Caja de texto para que el usuario pregunte
+        mensaje_usuario = st.chat_input("Ej: ¿Qué carro tiene el mejor precio y menor kilometraje?")
+        
+        if mensaje_usuario:
+            # 1. Guardar y mostrar el mensaje del usuario
+            st.session_state.mensajes.append({"role": "user", "content": mensaje_usuario})
+            with st.chat_message("user"):
+                st.write(mensaje_usuario)
+                
+            # 2. Generar y mostrar la respuesta de la IA
             with st.chat_message("assistant"):
-                st.write("¡Hola! Soy tu asistente de datos. Pronto estaré conectado a tu base de datos para darte recomendaciones exactas. 🛠️")
-                
-            if mensaje_usuario:
-                with st.chat_message("user"):
-                    st.write(mensaje_usuario)
-                
-                with st.chat_message("assistant"):
-                    st.write(f"Has preguntado: '{mensaje_usuario}'.")
-                    st.info("💡 Modo demostración: Necesitamos conectar una API para que empiece a analizar y responder con datos reales.")
-
-else:
-    st.error(f"El dataset no tiene las columnas requeridas: {', '.join(columnas_requeridas)}")
+                if not api_key:
+                    st.warning("⚠️ Necesitas colocar tu API Key arriba para que pueda procesar los datos.")
+                else:
+                    try:
+                        # Configurar la llave
+                        genai.configure(api_key=api_key)
+                        modelo = genai.GenerativeModel('gemini-1.5-flash')
+                        
+                        # Magia: Le inyectamos la tabla actual de pandas como contexto
+                        contexto_tabla = df_final.head(50).to_string(index=False)
+                        prompt_sistema = f"""
+                        Eres un experto asesor automotriz de segunda mano.
+                        Responde a la pregunta del usuario basándote ESTRICTAMENTE en esta base de datos de mercado:
+                        
+                        {contexto_tabla}
+                        
+                        Pregunta del usuario: {mensaje_usuario}
+                        Responde de forma concisa, analítica y amigable.
+                        """
+                        
+                        # Llamada a la API
+                        respuesta = modelo.generate_content(prompt_sistema)
+                        texto_ia = respuesta.text
+                        
+                        # Imprimir y guardar en memoria
+                        st.write(texto_ia)
+                        st.session_state.mensajes.append({"role": "assistant", "content": texto_ia})
+                        
+                    except Exception as e:
+                        st.error(f"Error de conexión: Verifica tu API Key o conexión a internet. Detalles: {e}")
