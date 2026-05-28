@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# 1. Configuración de la página
+# 1. Configuración de la página (Siempre debe ser la primera línea de Streamlit)
 st.set_page_config(
     page_title="Tracker de Mercado Automotriz", 
     page_icon="🚗", 
@@ -22,7 +22,7 @@ st.markdown('<div class="main-title">🚗 Tracker de Mercado Automotriz</div>', 
 st.markdown('<div class="subtitle">Fase 1: Análisis y Visualización Estática de Depreciación de Vehículos</div>', unsafe_allow_html=True)
 st.divider()
 
-# --- NUEVA LÓGICA: DATA POR DEFECTO ---
+# --- DATA POR DEFECTO ---
 @st.cache_data
 def cargar_data_defecto():
     """Crea un DataFrame de prueba si el usuario no sube nada"""
@@ -35,11 +35,11 @@ def cargar_data_defecto():
     }
     return pd.DataFrame(data)
 
-# 3. Componente de carga de archivos
+# 3. Componente de carga de archivos en la barra lateral
 st.sidebar.header("📂 Configuración de Datos")
 archivo_subido = st.sidebar.file_uploader("Sube tu archivo de mercado (.csv)", type=["csv"])
 
-# Decidir qué data usar: la subida o la por defecto
+# Decidir qué conjunto de datos utilizar
 if archivo_subido is not None:
     df = pd.read_csv(archivo_subido)
     st.sidebar.success("¡Archivo cargado correctamente!")
@@ -47,7 +47,7 @@ else:
     df = cargar_data_defecto()
     st.sidebar.info("Mostrando datos de prueba. Sube tu propio CSV para sobreescribirlos.")
 
-# Asegurar que las columnas requeridas existan
+# Asegurar que las columnas requeridas existan antes de procesar
 columnas_requeridas = ["Marca", "Modelo", "Año", "Kilometraje", "Precio_USD"]
 
 if all(col in df.columns for col in columnas_requeridas):
@@ -91,7 +91,7 @@ if all(col in df.columns for col in columnas_requeridas):
         
     st.divider()
     
-    # --- SECCIÓN DE GRÁFICOS INTERACTIVOS (Bugs corregidos) ---
+    # --- SECCIÓN DE GRÁFICOS INTERACTIVOS ---
     if not df_final.empty:
         st.subheader("📈 Análisis de Distribución y Depreciación")
         col1, col2 = st.columns(2)
@@ -106,7 +106,6 @@ if all(col in df.columns for col in columnas_requeridas):
                 title="Distribución de Precios por Año",
                 labels={"Precio_USD": "Precio (USD)", "Año": "Año"}
             )
-            # Solución al error: Usamos la sintaxis correcta para la leyenda horizontal
             fig_box.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5))
             st.plotly_chart(fig_box, use_container_width=True)
             
@@ -131,52 +130,52 @@ if all(col in df.columns for col in columnas_requeridas):
         with st.expander("Ver tabla completa de registros"):
             st.dataframe(df_final.sort_values(by="Precio_USD", ascending=True), use_container_width=True)
             
+    # --- ZONA DE EXPLORACIÓN Y ASESORÍA ---
+    st.divider()
+    st.markdown('<div class="main-title">🚘 Zona de Exploración y Asesoría</div>', unsafe_allow_html=True)
+
+    col_3d, col_chat = st.columns([1.2, 1])
+
+    with col_3d:
+        st.subheader("Visor 3D del Vehículo")
+        st.markdown("Explora el diseño exterior e interior del modelo seleccionado.")
+        
+        # Iframe con modelo funcional activo para evitar errores de carga
+        st.components.v1.html(
+            '''
+            <div class="sketchfab-embed-wrapper">
+                <iframe title="Nissan 3D Model" 
+                    frameborder="0" 
+                    allowfullscreen 
+                    mozallowfullscreen="true" 
+                    webkitallowfullscreen="true" 
+                    allow="autoplay; fullscreen; xr-spatial-tracking" 
+                    src="https://sketchfab.com/models/e2b7988d402a4af6af9cf51144daa798/embed?autostart=1&ui_theme=dark" 
+                    height="450" 
+                    width="100%"> 
+                </iframe>
+            </div>
+            ''',
+            height=470,
+        )
+
+    with col_chat:
+        st.subheader("💬 Asistente Automotriz AI")
+        st.markdown("Pregúntame sobre aciertos, desaciertos o comparativas.")
+        
+        mensaje_usuario = st.chat_input("Ej: ¿Por qué elegir un Swift sobre un Accent?")
+        
+        with st.container(height=350):
+            with st.chat_message("assistant"):
+                st.write("¡Hola! Soy tu asistente de datos. Pronto estaré conectado a tu base de datos para darte recomendaciones exactas. 🛠️")
+                
+            if mensaje_usuario:
+                with st.chat_message("user"):
+                    st.write(mensaje_usuario)
+                
+                with st.chat_message("assistant"):
+                    st.write(f"Has preguntado: '{mensaje_usuario}'.")
+                    st.info("💡 Modo demostración: Necesitamos conectar una API para que empiece a analizar y responder con datos reales.")
+
 else:
     st.error(f"El dataset no tiene las columnas requeridas: {', '.join(columnas_requeridas)}")
-    import streamlit.components.v1 as components
-
-# ... (Todo tu código anterior de filtros y gráficos) ...
-
-st.divider()
-st.markdown('<div class="main-title">🚘 Zona de Exploración y Asesoría</div>', unsafe_allow_html=True)
-
-# Creamos dos columnas: una para el 3D y otra para el chat
-col_3d, col_chat = st.columns([1.2, 1])
-
-with col_3d:
-    st.subheader("Visor 3D del Vehículo")
-    st.markdown("Explora el diseño exterior e interior del modelo seleccionado.")
-    
-    # Usamos un iframe de Sketchfab (Este es un modelo de prueba gratuito)
-    # Más adelante podemos hacer que este link cambie según el carro que selecciones en el filtro.
-    st.components.v1.html(
-        '''
-        <div class="sketchfab-embed-wrapper">
-            <iframe title="Car Model" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share src="https://sketchfab.com/models/302a22f3e8f8444a8677cde6cda1ebbd/embed?autostart=1&ui_theme=dark" height="450" width="100%"> </iframe>
-        </div>
-        ''',
-        height=470,
-    )
-
-with col_chat:
-    st.subheader("💬 Asistente Automotriz AI")
-    st.markdown("Pregúntame sobre aciertos, desaciertos o comparativas.")
-    
-    # Interfaz nativa de chat de Streamlit
-    mensaje_usuario = st.chat_input("Ej: ¿Por qué elegir un Swift sobre un Accent?")
-    
-    # Contenedor para mostrar el historial del chat
-    with st.container(height=350):
-        # Mensaje de bienvenida por defecto
-        with st.chat_message("assistant"):
-            st.write("¡Hola! Soy tu asistente de datos. Pronto estaré conectado a tu base de datos para darte recomendaciones exactas. 🛠️")
-            
-        if mensaje_usuario:
-            # Mostrar la pregunta del usuario
-            with st.chat_message("user"):
-                st.write(mensaje_usuario)
-            
-            # Mostrar la respuesta (por ahora de prueba) del bot
-            with st.chat_message("assistant"):
-                st.write(f"Has preguntado: '{mensaje_usuario}'.")
-                st.info("💡 Modo demostración: Necesitamos conectar una API para que empiece a analizar y responder con datos reales.")
