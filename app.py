@@ -207,7 +207,7 @@ if all(col in df.columns for col in columnas_requeridas):
                     try:
                         genai.configure(api_key=api_key)
                       # PON ESTA LÍNEA EN SU LUGAR:
-modelo = genai.GenerativeModel('gemini-1.5-flash-latest')
+modelo = genai.GenerativeModel('gemini-pro')
                         
                         contexto_tabla = df_final.head(50).to_string(index=False)
                         prompt_sistema = f"""
