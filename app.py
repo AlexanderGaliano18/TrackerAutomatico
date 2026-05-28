@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# 1. Configuración de la página (Siempre debe ser la primera línea de Streamlit)
+# 1. Configuración de la página
 st.set_page_config(
     page_title="Tracker de Mercado Automotriz", 
     page_icon="🚗", 
@@ -22,10 +22,19 @@ st.markdown('<div class="main-title">🚗 Tracker de Mercado Automotriz</div>', 
 st.markdown('<div class="subtitle">Fase 1: Análisis y Visualización Estática de Depreciación de Vehículos</div>', unsafe_allow_html=True)
 st.divider()
 
+# --- DICCIONARIO DE MODELOS 3D ---
+# Aquí mapeamos cada modelo con su respectivo link de Sketchfab. 
+# Puedes ir buscando los links reales de los carros que quieras y reemplazarlos aquí.
+MAPA_MODELOS_3D = {
+    "Versa": "https://sketchfab.com/models/e2b7988d402a4af6af9cf51144daa798/embed?autostart=1&ui_theme=dark",
+    "Swift": "https://sketchfab.com/models/643b092c41804d99b2cb4e348f98ec81/embed?autostart=1&ui_theme=dark",
+    "Accent": "https://sketchfab.com/models/4de29e59d9fc4fc48d9482f567822601/embed?autostart=1&ui_theme=dark"
+}
+URL_POR_DEFECTO = "https://sketchfab.com/models/e2b7988d402a4af6af9cf51144daa798/embed?autostart=1&ui_theme=dark"
+
 # --- DATA POR DEFECTO ---
 @st.cache_data
 def cargar_data_defecto():
-    """Crea un DataFrame de prueba si el usuario no sube nada"""
     data = {
         "Marca": ["Nissan", "Nissan", "Suzuki", "Suzuki", "Hyundai", "Hyundai"],
         "Modelo": ["Versa", "Versa", "Swift", "Swift", "Accent", "Accent"],
@@ -35,11 +44,10 @@ def cargar_data_defecto():
     }
     return pd.DataFrame(data)
 
-# 3. Componente de carga de archivos en la barra lateral
+# 3. Componente de carga de archivos
 st.sidebar.header("📂 Configuración de Datos")
 archivo_subido = st.sidebar.file_uploader("Sube tu archivo de mercado (.csv)", type=["csv"])
 
-# Decidir qué conjunto de datos utilizar
 if archivo_subido is not None:
     df = pd.read_csv(archivo_subido)
     st.sidebar.success("¡Archivo cargado correctamente!")
@@ -47,7 +55,6 @@ else:
     df = cargar_data_defecto()
     st.sidebar.info("Mostrando datos de prueba. Sube tu propio CSV para sobreescribirlos.")
 
-# Asegurar que las columnas requeridas existan antes de procesar
 columnas_requeridas = ["Marca", "Modelo", "Año", "Kilometraje", "Precio_USD"]
 
 if all(col in df.columns for col in columnas_requeridas):
@@ -55,7 +62,6 @@ if all(col in df.columns for col in columnas_requeridas):
     st.sidebar.divider()
     st.sidebar.header("🔍 Filtros")
     
-    # --- FILTROS DINÁMICOS ---
     marcas_disponibles = df["Marca"].unique()
     marcas_seleccionadas = st.sidebar.multiselect(
         "Selecciona la(s) Marca(s):", 
@@ -137,27 +143,41 @@ if all(col in df.columns for col in columnas_requeridas):
     col_3d, col_chat = st.columns([1.2, 1])
 
     with col_3d:
-        st.subheader("Visor 3D del Vehículo")
-        st.markdown("Explora el diseño exterior e interior del modelo seleccionado.")
+        st.subheader("Visor 3D Dinámico")
         
-        # Iframe con modelo funcional activo para evitar errores de carga
-        st.components.v1.html(
-            '''
-            <div class="sketchfab-embed-wrapper">
-                <iframe title="Nissan 3D Model" 
-                    frameborder="0" 
-                    allowfullscreen 
-                    mozallowfullscreen="true" 
-                    webkitallowfullscreen="true" 
-                    allow="autoplay; fullscreen; xr-spatial-tracking" 
-                    src="https://sketchfab.com/models/e2b7988d402a4af6af9cf51144daa798/embed?autostart=1&ui_theme=dark" 
-                    height="450" 
-                    width="100%"> 
-                </iframe>
-            </div>
-            ''',
-            height=470,
-        )
+        if not df_final.empty:
+            # Detectamos qué modelos pasaron los filtros dinámicos
+            modelos_filtrados = df_final["Modelo"].unique()
+            
+            # Selector interno para decidir qué carro renderizar en el iframe
+            modelo_seleccionado_3d = st.selectbox(
+                "🔍 Selecciona el vehículo específico para inspeccionar en 3D:",
+                options=modelos_filtrados
+            )
+            
+            # Buscamos el link correspondiente en nuestro diccionario. Si no existe, usa el por defecto.
+            url_gltf = MAPA_MODELOS_3D.get(modelo_seleccionado_3d, URL_POR_DEFECTO)
+            
+            # Renderizado del Iframe dinámico
+            st.components.v1.html(
+                f'''
+                <div class="sketchfab-embed-wrapper">
+                    <iframe title="Visor 3D - {modelo_seleccionado_3d}" 
+                        frameborder="0" 
+                        allowfullscreen 
+                        mozallowfullscreen="true" 
+                        webkitallowfullscreen="true" 
+                        allow="autoplay; fullscreen; xr-spatial-tracking" 
+                        src="{url_gltf}" 
+                        height="420" 
+                        width="100%"> 
+                    </iframe>
+                </div>
+                ''',
+                height=440,
+            )
+        else:
+            st.info("Aplica filtros válidos en la barra lateral para activar el visor 3D.")
 
     with col_chat:
         st.subheader("💬 Asistente Automotriz AI")
