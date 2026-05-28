@@ -200,7 +200,7 @@ if all(col in df.columns for col in columnas_requeridas):
             with st.chat_message("user"):
                 st.write(mensaje_usuario)
                 
-           with st.chat_message("assistant"):
+            with st.chat_message("assistant"):
                 if not api_key:
                     st.error("⚠️ No se detectó la llave API. Revisa los Secrets en la nube.")
                 else:
