@@ -22,15 +22,14 @@ st.markdown('<div class="main-title">🚗 Tracker de Mercado Automotriz</div>', 
 st.markdown('<div class="subtitle">Fase 1: Análisis y Visualización Estática de Depreciación de Vehículos</div>', unsafe_allow_html=True)
 st.divider()
 
-# --- DICCIONARIO DE MODELOS 3D ---
-# Aquí mapeamos cada modelo con su respectivo link de Sketchfab. 
-# Puedes ir buscando los links reales de los carros que quieras y reemplazarlos aquí.
+# --- DICCIONARIO DE MODELOS 3D ACTUALIZADO ---
+# Enlaces exactos elegidos por ti con los parámetros de autostart y tema oscuro
 MAPA_MODELOS_3D = {
-    "Versa": "https://sketchfab.com/models/e2b7988d402a4af6af9cf51144daa798/embed?autostart=1&ui_theme=dark",
-    "Swift": "https://sketchfab.com/models/643b092c41804d99b2cb4e348f98ec81/embed?autostart=1&ui_theme=dark",
-    "Accent": "https://sketchfab.com/models/4de29e59d9fc4fc48d9482f567822601/embed?autostart=1&ui_theme=dark"
+    "Versa": "https://sketchfab.com/models/18af87c9490e4acb80a46b70ca8d86ed/embed?autostart=1&ui_theme=dark",
+    "Accent": "https://sketchfab.com/models/cec6b04b06724f1088129c1054ccb1ec/embed?autostart=1&ui_theme=dark"
 }
-URL_POR_DEFECTO = "https://sketchfab.com/models/e2b7988d402a4af6af9cf51144daa798/embed?autostart=1&ui_theme=dark"
+# Si el usuario selecciona un auto que no tiene modelo 3D (como el Swift), cargará el Versa por defecto
+URL_POR_DEFECTO = "https://sketchfab.com/models/18af87c9490e4acb80a46b70ca8d86ed/embed?autostart=1&ui_theme=dark"
 
 # --- DATA POR DEFECTO ---
 @st.cache_data
@@ -146,19 +145,16 @@ if all(col in df.columns for col in columnas_requeridas):
         st.subheader("Visor 3D Dinámico")
         
         if not df_final.empty:
-            # Detectamos qué modelos pasaron los filtros dinámicos
             modelos_filtrados = df_final["Modelo"].unique()
             
-            # Selector interno para decidir qué carro renderizar en el iframe
             modelo_seleccionado_3d = st.selectbox(
                 "🔍 Selecciona el vehículo específico para inspeccionar en 3D:",
                 options=modelos_filtrados
             )
             
-            # Buscamos el link correspondiente en nuestro diccionario. Si no existe, usa el por defecto.
+            # Buscamos el link en el diccionario. Si es Swift, devolverá la URL_POR_DEFECTO.
             url_gltf = MAPA_MODELOS_3D.get(modelo_seleccionado_3d, URL_POR_DEFECTO)
             
-            # Renderizado del Iframe dinámico
             st.components.v1.html(
                 f'''
                 <div class="sketchfab-embed-wrapper">
