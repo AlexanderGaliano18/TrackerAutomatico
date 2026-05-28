@@ -32,5 +32,4 @@ Sigue estos pasos para ejecutar el proyecto en tu máquina local:
 
 1. **Clona este repositorio:**
 ```bash
-   git clone [https://github.com/tu-usuario/tracker-automotriz.git](https://github.com/tu-usuario/tracker-automotriz.git)
-   cd tracker-automotriz
+   git clone(https://github.com/AlexanderGaliano18/TrackerAutomatico)
