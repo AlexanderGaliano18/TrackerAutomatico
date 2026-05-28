@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import google.generativeai as genai  # <-- Librería de IA
 
 # 1. Configuración de la página
 st.set_page_config(
@@ -23,13 +24,11 @@ st.markdown('<div class="subtitle">Fase 1: Análisis y Visualización Estática 
 st.divider()
 
 # --- DICCIONARIO DE MODELOS 3D ACTUALIZADO ---
-# Enlaces exactos elegidos por ti con los parámetros de autostart y tema oscuro
 MAPA_MODELOS_3D = {
     "Versa": "https://sketchfab.com/models/18af87c9490e4acb80a46b70ca8d86ed/embed?autostart=1&ui_theme=dark",
     "Swift": "https://sketchfab.com/models/218c3c0c6afd4d0eb343bd50d8868fd0/embed?autostart=1&ui_theme=dark",
     "Accent": "https://sketchfab.com/models/cec6b04b06724f1088129c1054ccb1ec/embed?autostart=1&ui_theme=dark"
 }
-# Si el usuario selecciona un auto que no tiene modelo 3D (como el Swift), cargará el Versa por defecto
 URL_POR_DEFECTO = "https://sketchfab.com/models/18af87c9490e4acb80a46b70ca8d86ed/embed?autostart=1&ui_theme=dark"
 
 # --- DATA POR DEFECTO ---
@@ -153,7 +152,6 @@ if all(col in df.columns for col in columnas_requeridas):
                 options=modelos_filtrados
             )
             
-            # Buscamos el link en el diccionario. Si es Swift, devolverá la URL_POR_DEFECTO.
             url_gltf = MAPA_MODELOS_3D.get(modelo_seleccionado_3d, URL_POR_DEFECTO)
             
             st.components.v1.html(
@@ -180,39 +178,36 @@ if all(col in df.columns for col in columnas_requeridas):
         st.subheader("💬 Asistente Automotriz AI")
         st.markdown("Pregúntame sobre aciertos, desaciertos o comparativas.")
         
-        # Campo para ingresar la API Key de forma segura
-        api_key = st.text_input("🔑 Ingresa tu API Key de Gemini:", type="password")
+        # --- LECTURA SEGURA DE LA API KEY DESDE LA BÓVEDA ---
+        try:
+            api_key = st.secrets["GEMINI_API_KEY"]
+        except KeyError:
+            st.warning("⚠️ Falta configurar GEMINI_API_KEY en los Secrets de Streamlit.")
+            api_key = None
         
-        # Memoria del chat: Inicializamos el historial en session_state
         if "mensajes" not in st.session_state:
-            st.session_state.mensajes = [{"role": "assistant", "content": "¡Hola! Ingresa tu API Key arriba y pregúntame qué auto te conviene más. 🛠️"}]
+            st.session_state.mensajes = [{"role": "assistant", "content": "¡Hola! Ya estoy conectado a los datos. Pregúntame qué auto te conviene más. 🛠️"}]
             
-        # Contenedor para mostrar los mensajes anteriores
         with st.container(height=300):
             for msg in st.session_state.mensajes:
                 with st.chat_message(msg["role"]):
                     st.write(msg["content"])
                     
-        # Caja de texto para que el usuario pregunte
         mensaje_usuario = st.chat_input("Ej: ¿Qué carro tiene el mejor precio y menor kilometraje?")
         
         if mensaje_usuario:
-            # 1. Guardar y mostrar el mensaje del usuario
             st.session_state.mensajes.append({"role": "user", "content": mensaje_usuario})
             with st.chat_message("user"):
                 st.write(mensaje_usuario)
                 
-            # 2. Generar y mostrar la respuesta de la IA
             with st.chat_message("assistant"):
                 if not api_key:
-                    st.warning("⚠️ Necesitas colocar tu API Key arriba para que pueda procesar los datos.")
+                    st.error("⚠️ No se detectó la llave API. Revisa los Secrets en la nube.")
                 else:
                     try:
-                        # Configurar la llave
                         genai.configure(api_key=api_key)
                         modelo = genai.GenerativeModel('gemini-1.5-flash')
                         
-                        # Magia: Le inyectamos la tabla actual de pandas como contexto
                         contexto_tabla = df_final.head(50).to_string(index=False)
                         prompt_sistema = f"""
                         Eres un experto asesor automotriz de segunda mano.
@@ -224,13 +219,14 @@ if all(col in df.columns for col in columnas_requeridas):
                         Responde de forma concisa, analítica y amigable.
                         """
                         
-                        # Llamada a la API
                         respuesta = modelo.generate_content(prompt_sistema)
                         texto_ia = respuesta.text
                         
-                        # Imprimir y guardar en memoria
                         st.write(texto_ia)
                         st.session_state.mensajes.append({"role": "assistant", "content": texto_ia})
                         
                     except Exception as e:
                         st.error(f"Error de conexión: Verifica tu API Key o conexión a internet. Detalles: {e}")
+
+else:
+    st.error(f"El dataset no tiene las columnas requeridas: {', '.join(columnas_requeridas)}")
