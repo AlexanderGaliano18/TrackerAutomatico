@@ -26,6 +26,7 @@ st.divider()
 # Enlaces exactos elegidos por ti con los parámetros de autostart y tema oscuro
 MAPA_MODELOS_3D = {
     "Versa": "https://sketchfab.com/models/18af87c9490e4acb80a46b70ca8d86ed/embed?autostart=1&ui_theme=dark",
+    "Swift": "https://sketchfab.com/models/218c3c0c6afd4d0eb343bd50d8868fd0/embed?autostart=1&ui_theme=dark",
     "Accent": "https://sketchfab.com/models/cec6b04b06724f1088129c1054ccb1ec/embed?autostart=1&ui_theme=dark"
 }
 # Si el usuario selecciona un auto que no tiene modelo 3D (como el Swift), cargará el Versa por defecto
